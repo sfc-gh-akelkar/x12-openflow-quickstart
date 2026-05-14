@@ -1,0 +1,24 @@
+[build-system]
+requires = ["hatchling", "hatch-datavolo-nar"]
+build-backend = "hatchling.build"
+
+[project]
+name = "x12-processors"
+dynamic = ["version"]
+description = "NiFi Python processor for parsing HIPAA X12 EDI files into flat JSON records"
+requires-python = ">=3.11"
+license = "BSD-3-Clause"
+dependencies = [
+    "pyx12",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+]
+
+[tool.hatch.version]
+path = "src/x12_processors/__about__.py"
+
+[tool.hatch.build.targets.nar]
+packages = ["src/x12_processors"]
