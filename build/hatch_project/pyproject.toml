@@ -1,0 +1,12 @@
+[build-system]
+requires = ["hatchling", "hatch-datavolo-nar"]
+build-backend = "hatchling.build"
+
+[project]
+name = "x12-processors"
+version = "0.5.0"
+description = "X12 EDI Parser for NiFi/Openflow"
+dependencies = []
+
+[tool.hatch.build.targets.nar]
+packages = ["src/x12_processors"]

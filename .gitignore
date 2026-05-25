@@ -1,5 +1,11 @@
-dist/
 __pycache__/
 *.pyc
+*.pyo
+.eggs/
 *.egg-info/
-.hatch/
+dist/
+*.nar
+.env
+*.p8
+*.pem
+.DS_Store
