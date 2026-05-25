@@ -1,153 +1,248 @@
-# x12-to-insights
+# x12-openflow-quickstart
 
-**From 300MB EDI Files to AI-Enriched Claims in 15 Minutes.**
+**Production-grade X12 EDI ingestion with Openflow + Snowflake.**
 
-A production-grade pipeline for ingesting HIPAA X12 EDI healthcare transactions (837P Professional Claims) from S3 into Snowflake using Openflow, Snowpipe Streaming, Dynamic Tables, and Cortex AI.
+Ingest HIPAA X12 healthcare transactions (837 Claims, 834 Enrollments, 835 Remittances) from S3 into Snowflake — parsed in-flight by a custom NiFi Python processor, routed by transaction type, landed as structured columns, and AI-enriched with Claude Sonnet.
 
 ```
 S3 (300MB files)
-  → Openflow (split, extract, stream)
-    → Bronze: raw transactions (Snowpipe Streaming, no warehouse)
-      → Silver: parsed segments (Dynamic Tables, auto-refresh)
-        → Gold: analytics-ready claims + AI enrichment (Claude Sonnet 4-6)
+  → Openflow: SplitContent → ParseX12ToJSON → RouteOnAttribute
+    → 837 → PutSnowpipeStreaming → CLAIMS.LANDING_837_CLAIMS
+    → 834 → PutSnowpipeStreaming → ENROLLMENTS.LANDING_834_ENROLLMENTS
+    → 835 → PutSnowpipeStreaming → REMITTANCES.LANDING_835_REMITTANCES
+      → Gold Dynamic Tables (AI enrichment, type casting)
 ```
 
 ---
 
-## Quick Start
+## Architecture
 
-### Prerequisites
-
-- Snowflake account with ACCOUNTADMIN access
-- Openflow (Snowpark Container Services) enabled
-- S3 bucket (any region)
-- RSA key pair (PKCS8, unencrypted) for Snowpipe Streaming auth
-- Cortex AI access (`AI_COMPLETE` function)
-
-### Step 1: Run Prerequisites SQL
-
-```bash
-# In Snowflake worksheet or CLI:
-sql/00_prerequisites.sql
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  S3 BUCKET                                                           │
+│  300-400MB X12 files (mixed 834/835/837)                             │
+└────────────────────────────────┬────────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  OPENFLOW (Apache NiFi on SPCS)                                      │
+│                                                                       │
+│  ListS3 → FetchS3 → SplitContent(ST*) → ParseX12ToJSON              │
+│                                              │                        │
+│                                    RouteOnAttribute                   │
+│                              (x12.transaction.types)                  │
+│                           ┌──────────┼──────────┐                    │
+│                           ↓          ↓          ↓                    │
+│                         837        834        835                    │
+│                           ↓          ↓          ↓                    │
+│                  PutSnowpipe  PutSnowpipe  PutSnowpipe               │
+│                  (CLAIMS)    (ENROLLMENTS)(REMITTANCES)               │
+└────────────────────────────────┬────────────────────────────────────┘
+                                 │ Snowpipe Streaming (no warehouse)
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  LANDING TABLES (typed columns, no parsing needed)                   │
+│  • CLAIMS.LANDING_837_CLAIMS                                         │
+│  • ENROLLMENTS.LANDING_834_ENROLLMENTS                               │
+│  • REMITTANCES.LANDING_835_REMITTANCES                               │
+└────────────────────────────────┬────────────────────────────────────┘
+                                 │ Dynamic Tables (10 min lag)
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  GOLD LAYER                                                          │
+│  • GOLD_CLAIMS (+ AI diagnosis enrichment via Claude Sonnet 4-6)     │
+│  • GOLD_ENROLLMENTS (typed dates, filtered)                          │
+│  • GOLD_REMITTANCES (payment variance analysis)                      │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
-This creates the warehouse, database, schemas, and validates your Cortex AI access.
+### Why This Design
 
-### Step 2: Upload Sample Data to S3
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| Parsing | In-flight (ParseX12ToJSON) | Handles delimiter detection, qualifier routing, field naming — once, correctly |
+| Routing | RouteOnAttribute in Openflow | Each transaction type lands in its own typed table |
+| Landing | Typed VARCHAR columns | No VARIANT re-extraction, no SQL parsing, direct query |
+| Gold | Dynamic Tables | Only type casting + AI enrichment — no transformation logic |
+| AI | Claude Sonnet 4-6 | Decodes ICD-10 codes into human-readable descriptions |
 
-```bash
-aws s3 cp data/sample_837p_20_claims.edi s3://<your-bucket>/x12/
+---
+
+## Prerequisites
+
+- [ ] Snowflake account with ACCOUNTADMIN access
+- [ ] Openflow enabled (Snowpark Container Services)
+- [ ] S3 bucket with X12 files
+- [ ] RSA key pair (PKCS8, unencrypted) for Snowpipe Streaming
+- [ ] Network policy allowing SPCS container IPs (/24 CIDR block)
+- [ ] Cortex AI access (`AI_COMPLETE` function)
+
+---
+
+## Step 1: Run SQL Setup
+
+```sql
+-- Create landing tables (run once)
+@sql/00_prerequisites.sql
+@sql/01_landing_tables.sql
+
+-- Create Gold layer (run once)
+@sql/02_gold_layer.sql
 ```
 
-### Step 3: Set Up Openflow (Build the Flow)
+---
 
-Create an Openflow deployment and runtime, then build this 6-processor flow manually:
+## Step 2: Deploy ParseX12ToJSON to Openflow
 
-#### Processor 1: ListS3
+The custom Python processor lives in `src/x12_processors/`. Deploy it as an Openflow extension:
+
+1. In your Openflow deployment, navigate to **Extensions**
+2. Upload the `src/x12_processors/` directory as a Python processor package
+3. The processor `ParseX12ToJSON` will appear in the processor palette
+
+> The processor has zero external dependencies — it uses only Python stdlib + NiFi's `nifiapi` (provided by the runtime).
+
+---
+
+## Step 3: Build the Openflow Pipeline
+
+### Processor 1: ListS3
+
 | Property | Value |
 |----------|-------|
 | Bucket | `<your-bucket>` |
 | Prefix | `x12/` |
-| Region | `us-west-2` (or your region) |
+| Region | Your S3 region |
 | Listing Strategy | `Tracking Timestamps` |
 
-#### Processor 2: FetchS3Object
+### Processor 2: FetchS3Object
+
 | Property | Value |
 |----------|-------|
 | Bucket | Same as ListS3 |
 | Region | Same as ListS3 |
 
-#### Processor 3: SplitContent
+### Processor 3: SplitContent
+
 | Property | Value |
 |----------|-------|
 | Byte Sequence | `ST*` |
 | Keep Byte Sequence | `Leading` |
 
-This splits a multi-hundred-MB file into individual X12 transactions at the `ST*` transaction set boundary.
+Splits a 300MB multi-transaction file into individual transactions at `ST*` boundaries. Each output FlowFile = one transaction set.
 
-#### Processor 4: ExtractText
+### Processor 4: ParseX12ToJSON
+
 | Property | Value |
 |----------|-------|
-| Dynamic Property Name | `x12_content` |
-| Dynamic Property Value | `([\s\S]+)` |
+| Output Mode | `ndjson` |
+| Include Envelope | `true` |
+| Include Raw Segments | `false` |
+| Transaction Type Filter | *(leave empty to process all)* |
 
-Captures the full transaction content as a FlowFile attribute.
+This is the core processor. It:
+- Auto-detects delimiters from the ISA segment
+- Parses all segment types using qualifier-aware field maps
+- Outputs one JSON object per record (per CLM for 837, per INS for 834, per CLP for 835)
+- Sets FlowFile attribute `x12.transaction.types` (e.g., `837`)
 
-#### Processor 5: ReplaceText
+### Processor 5: RouteOnAttribute
+
 | Property | Value |
 |----------|-------|
-| Replacement Strategy | `Always Replace` |
-| Evaluation Mode | `Entire text` |
-| Replacement Value | `{"RAW_X12_DATA":"${x12_content:escapeJson()}","SOURCE_SYSTEM":"OPENFLOW_S3","MESSAGE_ID":"${UUID()}","INGESTION_TIMESTAMP":${now():toNumber()}}` |
+| Routing Strategy | `Route to Property name` |
+| **route_837** | `${x12.transaction.types:contains('837')}` |
+| **route_834** | `${x12.transaction.types:contains('834')}` |
+| **route_835** | `${x12.transaction.types:contains('835')}` |
 
-Wraps raw X12 text into a JSON record with a UUID and epoch timestamp.
+Auto-terminate the `unmatched` relationship.
 
-#### Processor 6: PutSnowpipeStreaming (v1)
+### Processor 6a: PutSnowpipeStreaming (837 Claims)
+
 | Property | Value |
 |----------|-------|
-| Account | Your account locator (e.g., `RRB23678`) |
-| User | Your Snowflake username |
+| Account | Your account locator |
+| User | Your Snowflake user |
 | Role | `ACCOUNTADMIN` |
 | Authentication | `Key Pair` |
-| Private Key Service | `StandardPrivateKeyService` (paste PKCS8 private key) |
+| Private Key Service | StandardPrivateKeyService |
 | Database | `X12_EDI_AI` |
-| Schema | `STAGING` |
-| Table | `LANDING_X12_RAW` |
+| Schema | `CLAIMS` |
+| Table | `LANDING_837_CLAIMS` |
 | Record Reader | `JsonTreeReader` |
-| Delivery Guarantee | `At least once` |
 | Client Lag | `1 sec` |
 
-> **Important:** Use PutSnowpipeStreaming (v1), NOT PutSnowpipeStreaming2. v1 uses a Record Reader + Table target. v2 uses NDJSON + Pipe + Offset Tokens — wrong for this pattern.
+### Processor 6b: PutSnowpipeStreaming (834 Enrollments)
 
-#### Controller Services
+Same as 6a, except:
+| Property | Value |
+|----------|-------|
+| Schema | `ENROLLMENTS` |
+| Table | `LANDING_834_ENROLLMENTS` |
 
-- **JsonTreeReader** — default settings
-- **StandardPrivateKeyService** — paste your RSA private key (PKCS8, unencrypted, including `-----BEGIN PRIVATE KEY-----` header)
-- **AWSCredentialsProviderControllerService** — Access Key + Secret Key for S3
+### Processor 6c: PutSnowpipeStreaming (835 Remittances)
 
-#### Connections
+Same as 6a, except:
+| Property | Value |
+|----------|-------|
+| Schema | `REMITTANCES` |
+| Table | `LANDING_835_REMITTANCES` |
 
-- Auto-terminate `failure` on: ReplaceText, PutSnowpipeStreaming
-- Auto-terminate `success` on: PutSnowpipeStreaming
-- Auto-terminate `original` on: SplitContent
+### Controller Services
 
-### Step 4: Create the Pipeline Tables
+| Service | Purpose |
+|---------|---------|
+| **JsonTreeReader** | Parses JSON output from ParseX12ToJSON |
+| **StandardPrivateKeyService** | Holds RSA private key for Snowpipe Streaming auth |
+| **AWSCredentialsProviderControllerService** | S3 access key + secret |
 
-```bash
-# In Snowflake worksheet or CLI:
-sql/01_x12_pipeline.sql
+### Connections Summary
+
+```
+ListS3 → FetchS3Object → SplitContent → ParseX12ToJSON → RouteOnAttribute
+                                                              │
+                                              route_837 → PutSnowpipe (CLAIMS)
+                                              route_834 → PutSnowpipe (ENROLLMENTS)
+                                              route_835 → PutSnowpipe (REMITTANCES)
 ```
 
-This creates:
-- **Bronze:** `STAGING.LANDING_X12_RAW` (landing table)
-- **Silver:** 6 Dynamic Tables that parse X12 segments
-- **Gold:** 2 Dynamic Tables (unified claims + AI-enriched)
+Auto-terminate: `failure` on all PutSnowpipe processors, `success` on all PutSnowpipe processors, `original` on SplitContent, `unmatched` on RouteOnAttribute.
 
-### Step 5: Start the Flow
+---
 
-Start all processors in Openflow. Data begins streaming within seconds.
+## Step 4: Upload Test Data and Start
 
-### Step 6: Verify
+```bash
+# Upload sample file to S3
+aws s3 cp data/sample_837p_20_claims.edi s3://<your-bucket>/x12/
+
+# Start all processors in Openflow
+```
+
+---
+
+## Step 5: Verify
 
 ```sql
--- Check Bronze
-SELECT COUNT(*) FROM X12_EDI_AI.STAGING.LANDING_X12_RAW;
+-- Claims landing (immediate)
+SELECT COUNT(*) FROM X12_EDI_AI.CLAIMS.LANDING_837_CLAIMS;
 
--- Check Gold (wait 10-15 min for Dynamic Tables to refresh)
-SELECT * FROM X12_EDI_AI.GOLD.GOLD_CLAIMS_AI_ENRICHED LIMIT 10;
+-- Gold with AI enrichment (wait ~10 min for Dynamic Table refresh)
+SELECT claim_id, subscriber_last_name, primary_diagnosis_code,
+       diagnosis_description, diagnosis_category, is_chronic_condition
+FROM X12_EDI_AI.GOLD.GOLD_CLAIMS
+LIMIT 10;
 ```
 
 ---
 
 ## Volume Testing
 
-Generate large files for load testing:
-
 ```bash
-# 500K claims (~300MB)
+# Generate 500K claims (~300MB)
 python scripts/generate_x12_claims.py --claims 500000 --output volume_837p_500k.edi
 
-# Upload to S3
+# Upload
 aws s3 cp volume_837p_500k.edi s3://<your-bucket>/x12/
 ```
 
@@ -155,46 +250,53 @@ aws s3 cp volume_837p_500k.edi s3://<your-bucket>/x12/
 
 ## Troubleshooting
 
-| Error | Cause | Fix |
-|-------|-------|-----|
-| "does not support columns with a default value" | Landing table has DEFAULT or IDENTITY columns | Use plain VARCHAR columns, generate values in ReplaceText |
-| "IP X.X.X.X is not allowed" | SPCS container IP blocked by network policy | Add a /24 CIDR block to your network policy |
-| "Value cannot be ingested into column of type TIMESTAMP" | Snowpipe Streaming rejects the timestamp format | Make the column VARCHAR, cast to TIMESTAMP in Dynamic Tables |
-| Queue 100% full in Openflow | PutSnowpipeStreaming slower than upstream | Increase Concurrent Tasks to 3-4 on PutSnowpipeStreaming |
+| Error | Fix |
+|-------|-----|
+| "IP not allowed to access Snowflake" | Add /24 CIDR for SPCS container IPs to network policy |
+| "Snowpipe Streaming does not support DEFAULT" | Landing tables use plain VARCHAR — no defaults |
+| PutSnowpipe routing "column not found" | Ensure JsonTreeReader is configured; table column names match parser output exactly (snake_case) |
+| ParseX12ToJSON shows 0 records | Check SplitContent output includes ISA header OR set Include Envelope = false |
 
 ---
 
 ## Repo Structure
 
 ```
-x12-to-insights/
-├── README.md                          ← You are here
+x12-openflow-quickstart/
+├── README.md                                  ← You are here
+├── src/x12_processors/
+│   ├── ParseX12ToJSON.py                     ← Custom NiFi Python processor
+│   ├── field_maps.py                         ← Field mappings for 834/835/837/270/271/276/277
+│   ├── __init__.py
+│   └── __about__.py
 ├── sql/
-│   ├── 00_prerequisites.sql           ← Run first: warehouse, schemas, key-pair
-│   └── 01_x12_pipeline.sql           ← Bronze table + all Dynamic Tables
+│   ├── 00_prerequisites.sql                  ← Warehouse, network policy, AI access check
+│   ├── 01_landing_tables.sql                 ← Typed tables for 837/834/835
+│   └── 02_gold_layer.sql                     ← Gold Dynamic Tables + AI enrichment
 ├── data/
-│   └── sample_837p_20_claims.edi      ← 20 test claims, upload to S3
+│   └── sample_837p_20_claims.edi             ← 20 test claims (correct X12 format)
 ├── scripts/
-│   └── generate_x12_claims.py         ← Generate volume test files
-└── docs/
-    └── blog_x12_openflow_pipeline.html ← Full blog post (open in browser)
+│   └── generate_x12_claims.py                ← Volume test data generator
+├── tests/
+├── docs/
+│   └── blog_x12_openflow_pipeline.html       ← Blog post
+└── pyproject.toml
 ```
 
 ---
 
-## Architecture
+## How It Works: The Parser
 
-| Layer | Table | What It Does |
-|-------|-------|-------------|
-| Bronze | `STAGING.LANDING_X12_RAW` | Raw X12 transactions as-is from Openflow |
-| Silver | `SILVER.SILVER_X12_SEGMENTS` | Explodes each transaction into ~25 segment rows |
-| Silver | `SILVER.SILVER_CLAIMS_HEADER` | Extracts CLM fields: claim ID, billed amount |
-| Silver | `SILVER.SILVER_PATIENTS` | Extracts NM1*IL + DMG: patient name, DOB, gender |
-| Silver | `SILVER.SILVER_PROVIDERS` | Extracts NM1*85/82: billing/rendering provider, NPI |
-| Silver | `SILVER.SILVER_DIAGNOSES` | Extracts HI: ICD-10 diagnosis code |
-| Silver | `SILVER.SILVER_SERVICE_LINES` | Extracts SV1: procedure code, charge, units |
-| Gold | `GOLD.GOLD_CLAIMS_COMPLETE` | Joins all Silver tables into one record per claim |
-| Gold | `GOLD.GOLD_CLAIMS_AI_ENRICHED` | Adds AI-decoded diagnosis (description, category, chronic flag) |
+`ParseX12ToJSON` is a pure-Python NiFi FlowFileTransform that:
+
+1. **Detects delimiters** from ISA positions 3/104/105 (handles non-standard files)
+2. **Splits segments** using the detected terminator
+3. **Routes by qualifier** — `NM1*85` → billing provider, `NM1*IL` → subscriber, `NM1*82` → rendering
+4. **Maps fields by position** using `field_maps.py` dictionaries
+5. **Handles composite elements** — strips sub-element separator (`:`) from values like `HC:99213`
+6. **Sets FlowFile attributes** — `x12.transaction.types`, `x12.record.count`, `mime.type`
+
+Supports: 834, 835, 837, 270, 271, 276, 277.
 
 ---
 

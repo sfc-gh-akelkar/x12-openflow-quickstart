@@ -81,7 +81,7 @@ def generate_claim(claim_num):
         charge = round(random.uniform(low, high), 2)
         total += charge
         service_lines.append(
-            f"SV1*HC~{code}*{charge:.2f}*UN*1***1~"
+            f"SV1*HC:{code}*{charge:.2f}*UN*1***1~"
             f"DTP*472*D8*{service_date.strftime('%Y%m%d')}~"
             f"REF*6R*LN{i:03d}"
         )
@@ -114,8 +114,8 @@ def generate_claim(claim_num):
         segments.append(sl)
 
     segments.extend([
-        f"CLM*{claim_id}*{total:.2f}***{pos}~B~1*Y*A*Y*Y",
-        f"HI*ABK~{icd10}",
+        f"CLM*{claim_id}*{total:.2f}***{pos}:B:1*Y*A*Y*Y",
+        f"HI*ABK:{icd10}",
         f"SE*{seg_count}*{claim_num:09d}",
     ])
 
