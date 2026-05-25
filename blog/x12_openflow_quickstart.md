@@ -62,6 +62,8 @@ Our processor reads these delimiters, splits the file into segments, and maps ea
 
 Openflow requires Python processors packaged as NAR (NiFi Archive) files:
 
+> **Quick start:** To get started immediately, upload `x12_processors-0.5.0.nar` from the repo root directly to Openflow (Extensions → Upload NAR). To customize field mappings or build from source, follow the steps below.
+
 ```bash
 pip install hatch hatch-datavolo-nar
 

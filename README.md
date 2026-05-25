@@ -95,6 +95,8 @@ aws s3 cp data/sample_835_10_remittances.edi s3://your-bucket/x12/
 
 ## Building the NAR
 
+> **Quick start:** To get started immediately, upload `x12_processors-0.5.0.nar` from the repo root directly to Openflow (Extensions → Upload NAR). To customize field mappings or build from source, follow the steps below.
+
 ```bash
 pip install hatch hatch-datavolo-nar
 cd build/hatch_project
