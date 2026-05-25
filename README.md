@@ -89,7 +89,7 @@ hatch build --target nar
 4. Select `x12_processors-0.5.0.nar`
 
 <!-- Screenshot: screenshots/nar_upload_success.png -->
-![NAR Upload Success](screenshots/nar_upload_success.png)
+<!-- TODO: Add screenshot -->
 
 You should see a green checkmark with "Installed" status.
 
@@ -100,7 +100,7 @@ You should see a green checkmark with "Installed" status.
 3. You should see it with tags: `x12, edi, hipaa, healthcare, parse, json, 834, 835, 837`
 
 <!-- Screenshot: screenshots/processor_palette.png -->
-![ParseX12ToJSON in Palette](screenshots/processor_palette.png)
+<!-- TODO: Add screenshot -->
 
 > **Troubleshooting:** If the processor shows "Invalid" with an empty Properties tab, the Python import failed. Ensure the NAR was built with `hatch-datavolo-nar` (not manually zipped) and uses the try/except import pattern.
 
@@ -172,7 +172,7 @@ This processor splits the NDJSON output (multiple records per file) into individ
 - `failure` → auto-terminate
 
 <!-- Screenshot: screenshots/splitrecord_connection.png -->
-![SplitRecord to RouteOnAttribute Connection](screenshots/splitrecord_connection.png)
+<!-- TODO: Add screenshot -->
 
 ### 3.5 RouteOnAttribute
 
@@ -195,7 +195,7 @@ Add three **dynamic properties** (click the `+` button):
 - `unmatched` → auto-terminate
 
 <!-- Screenshot: screenshots/routeonattribute_properties.png -->
-![RouteOnAttribute Properties](screenshots/routeonattribute_properties.png)
+<!-- TODO: Add screenshot -->
 
 ### 3.6 PutSnowpipeStreaming (×3)
 
@@ -232,7 +232,7 @@ Before configuring the processors, create this controller service:
 | Remittances | `REMITTANCES` | `LANDING_835_REMITTANCES` |
 
 <!-- Screenshot: screenshots/putsnowpipestreaming_config.png -->
-![PutSnowpipeStreaming Configuration](screenshots/putsnowpipestreaming_config.png)
+<!-- TODO: Add screenshot -->
 
 > **Troubleshooting — "Authorization failed after retry":** Your network policy may be blocking the Openflow runtime's SPCS IPs. Check `LOGIN_HISTORY` for `INCOMING_REQUEST_BLOCKED` entries and add those IPs to your network policy's allowed list.
 
@@ -249,7 +249,7 @@ aws s3 cp data/sample_835_10_remittances.edi s3://your-bucket/x12/
 ```
 
 <!-- Screenshot: screenshots/s3_bucket_files.png -->
-![S3 Bucket with EDI Files](screenshots/s3_bucket_files.png)
+<!-- TODO: Add screenshot -->
 
 Your bucket should show three files directly under the `x12/` prefix — no subfolders.
 
