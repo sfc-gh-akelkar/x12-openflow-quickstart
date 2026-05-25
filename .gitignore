@@ -8,4 +8,3 @@ dist/
 *.p8
 *.pem
 .DS_Store
-x12_processors-0.[0-4].*.nar

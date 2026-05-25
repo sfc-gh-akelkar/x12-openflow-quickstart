@@ -76,9 +76,8 @@ SELECT SNOWFLAKE.CORTEX.COMPLETE('claude-sonnet-4-6', 'Say hello') AS test;
 **Build from source** (for customization):
 ```bash
 pip install hatch hatch-datavolo-nar
-cd build/hatch_project
 hatch build --target nar
-# Output: dist/x12_processors-0.5.0.nar
+# Output: dist/x12_processors-<version>.nar
 ```
 
 ### 2.2 Upload to Openflow
