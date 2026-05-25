@@ -4,8 +4,8 @@ __pycache__/
 .eggs/
 *.egg-info/
 dist/
-*.nar
 .env
 *.p8
 *.pem
 .DS_Store
+x12_processors-0.[0-4].*.nar
