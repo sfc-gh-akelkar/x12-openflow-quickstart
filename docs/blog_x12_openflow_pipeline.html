@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>From 300MB EDI Files to AI-Enriched Claims in 15 Minutes</title>
+    <style>
+        :root {
+            --bg: #0f1117;
+            --surface: #1a1d27;
+            --border: #2a2d3a;
+            --text: #e4e4e7;
+            --text-muted: #9ca3af;
+            --accent: #29b5e8;
+            --accent-dim: #1a7a9e;
+            --code-bg: #1e2130;
+            --callout-bg: #1c2333;
+            --callout-border: #29b5e8;
+            --success: #4ade80;
+            --warn: #fbbf24;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            padding: 0;
+        }
+        .hero {
+            background: linear-gradient(135deg, #0f1117 0%, #1a2744 50%, #0f1117 100%);
+            padding: 80px 20px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+        .hero h1 {
+            font-size: 2.4rem;
+            font-weight: 700;
+            max-width: 800px;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, #fff 0%, #29b5e8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero .subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .tech-stack {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+        .tech-stack span {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: var(--accent);
+        }
+        article {
+            max-width: 780px;
+            margin: 0 auto;
+            padding: 60px 20px;
+        }
+        h2 {
+            font-size: 1.8rem;
+            margin: 60px 0 20px;
+            color: #fff;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+        h3 {
+            font-size: 1.3rem;
+            margin: 40px 0 15px;
+            color: var(--accent);
+        }
+        p { margin: 0 0 16px; }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        ul, ol { margin: 0 0 16px 24px; }
+        li { margin-bottom: 8px; }
+        strong { color: #fff; }
+        code {
+            background: var(--code-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.88rem;
+        }
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            overflow-x: auto;
+            margin: 0 0 24px;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+            font-size: inherit;
+        }
+        .callout {
+            background: var(--callout-bg);
+            border-left: 4px solid var(--callout-border);
+            padding: 16px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 24px 0;
+        }
+        .callout.warn { border-left-color: var(--warn); }
+        .callout strong { color: var(--warn); }
+        .callout p:last-child { margin-bottom: 0; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0 0 24px;
+            font-size: 0.9rem;
+        }
+        th {
+            background: var(--surface);
+            text-align: left;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            color: var(--accent);
+            font-weight: 600;
+        }
+        td {
+            padding: 10px 16px;
+            border: 1px solid var(--border);
+        }
+        tr:nth-child(even) td { background: var(--surface); }
+        .architecture-diagram {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 24px;
+            overflow-x: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            line-height: 1.4;
+            white-space: pre;
+            margin: 24px 0;
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin: 24px 0;
+        }
+        .metric-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+        .metric-card .value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+        .metric-card .label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        .checklist { list-style: none; margin-left: 0; }
+        .checklist li::before { content: "☐ "; color: var(--accent); }
+        hr {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 60px 0;
+        }
+        .segment-anatomy {
+            display: grid;
+            grid-template-columns: 80px 1fr;
+            gap: 8px 16px;
+            margin: 16px 0 24px;
+        }
+        .segment-anatomy .seg-id {
+            font-family: monospace;
+            font-weight: 700;
+            color: var(--accent);
+        }
+        .segment-anatomy .seg-desc { color: var(--text-muted); }
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin: 24px 0;
+        }
+        .before-after > div {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .before-after .label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+        @media (max-width: 640px) {
+            .hero h1 { font-size: 1.6rem; }
+            .before-after { grid-template-columns: 1fr; }
+            .metrics-grid { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="hero">
+    <h1>From 300MB EDI Files to AI-Enriched Claims in 15 Minutes</h1>
+    <p class="subtitle">Building a production X12 pipeline on Snowflake — serverless ingestion, declarative parsing, and Claude Sonnet enrichment with zero orchestration code.</p>
+    <div class="tech-stack">
+        <span>Openflow (NiFi on SPCS)</span>
+        <span>Snowpipe Streaming</span>
+        <span>Dynamic Tables</span>
+        <span>Cortex AI</span>
+        <span>Claude Sonnet 4-6</span>
+    </div>
+</div>
+
+<article>
+
+<p>Healthcare organizations receive hundreds of megabytes of X12 EDI files from clearinghouses every day. These files contain claims, enrollments, and remittance data encoded in a format designed in the 1970s — no schema, no JSON, no CSV headers. Just pipe-delimited segments separated by tildes.</p>
+
+<p>The legacy approach: custom parsers, ETL jobs, staging databases, hours of delay. The modern approach: a file lands in S3, streams into Snowflake without a warehouse, gets parsed by declarative Dynamic Tables, and is enriched by Claude Sonnet — all within 15 minutes, zero orchestration code.</p>
+
+<p>This post walks through the full architecture, from raw bytes to AI-enriched analytics.</p>
+
+<hr>
+
+<h2>What is X12 EDI?</h2>
+
+<p>X12 is the electronic data interchange standard used across US healthcare for transmitting claims (837), enrollments (834), remittance advice (835), eligibility (270/271), and more. Every payer, provider, and clearinghouse speaks X12.</p>
+
+<p>Here's what a single professional claim (837P) looks like — one patient, one visit, three service lines:</p>
+
+<pre><code>ST*837*000199954*005010X222A1~BHT*0019*00*CLM00199954*20260504*1030*CH~
+NM1*41*2*TCH URGENT CARE KATY*****46*1822835714~PER*IC*BILLING DEPT*TE*7135551234~
+NM1*40*2*UNITED HEALTHCARE*****46*86111~HL*1**20*1~
+NM1*85*2*TCH URGENT CARE KATY*****XX*1822835714~N3*6621 FANNIN ST~N4*HOUSTON*TX*77030~
+REF*EI*741852963~HL*2*1*22*1~
+NM1*IL*1*SMITH*JAMES****MI*TCH849459~N3*3983 MAIN ST~N4*HOUSTON*TX*77030~
+DMG*D8*20100501*M~HL*3*2*23*0~
+NM1*82*1*KIMKIM****XX*1822835714~PRV*PE*PXC*208000000X~
+SV1*HC~99213*398.43*UN*1***1~DTP*472*D8*20250706~REF*6R*LN001~
+SV1*HC~73610*379.51*UN*1***1~DTP*472*D8*20250706~REF*6R*LN002~
+SV1*HC~85025*516.60*UN*1***1~DTP*472*D8*20250706~REF*6R*LN003~
+CLM*CLM00199954*1294.54***11~B~1*Y*A*Y*Y~
+HI*ABK~K21.0~
+SE*28*000199954~</code></pre>
+
+<p>The anatomy:</p>
+<div class="segment-anatomy">
+    <span class="seg-id">ST/SE</span><span class="seg-desc">Transaction envelope (start/end)</span>
+    <span class="seg-id">NM1</span><span class="seg-desc">Name segments (patient, provider, payer — differentiated by qualifier in position 2)</span>
+    <span class="seg-id">CLM</span><span class="seg-desc">Claim header (ID, billed amount, place of service)</span>
+    <span class="seg-id">SV1</span><span class="seg-desc">Service line (procedure code, charge)</span>
+    <span class="seg-id">HI</span><span class="seg-desc">Diagnosis (ICD-10 code)</span>
+    <span class="seg-id">DMG</span><span class="seg-desc">Demographics (DOB, gender)</span>
+</div>
+
+<p>Fields are positional, separated by <code>*</code>. Segments are terminated by <code>~</code>. There are no column headers. A 300MB file contains 500K+ of these transactions concatenated together.</p>
+
+<hr>
+
+<h2>Architecture Overview</h2>
+
+<div class="architecture-diagram">┌──────────────────────────────────────────────────────────────────┐
+│  S3 BUCKET                                                        │
+│  300-400MB X12 files from clearinghouses                          │
+└─────────────────────────────┬────────────────────────────────────┘
+                              │
+                              ▼
+┌──────────────────────────────────────────────────────────────────┐
+│  OPENFLOW (Apache NiFi on Snowpark Container Services)            │
+│                                                                    │
+│  ListS3 → FetchS3 → SplitContent → ExtractText → ReplaceText     │
+│                        (on ST*)       (regex)     (JSON wrap)      │
+│                                                        │           │
+│                                          PutSnowpipeStreaming v1   │
+│                                          (batched, serverless)     │
+└─────────────────────────────┬────────────────────────────────────┘
+                              │ Snowpipe Streaming (no warehouse)
+                              ▼
+┌──────────────────────────────────────────────────────────────────┐
+│  BRONZE: LANDING_X12_RAW           4.4M transactions              │
+└─────────────────────────────┬────────────────────────────────────┘
+                              │ Dynamic Tables (5 min lag)
+                              ▼
+┌──────────────────────────────────────────────────────────────────┐
+│  SILVER: Parsed Segments           99M rows                       │
+│  • CLAIMS_HEADER  • PATIENTS  • PROVIDERS                         │
+│  • SERVICE_LINES  • DIAGNOSES                                     │
+└─────────────────────────────┬────────────────────────────────────┘
+                              │ Dynamic Tables (10-30 min lag)
+                              ▼
+┌──────────────────────────────────────────────────────────────────┐
+│  GOLD: Analytics-Ready             2.2M enriched claims           │
+│  • CLAIMS_COMPLETE (joined)                                       │
+│  • CLAIMS_AI_ENRICHED (+ Claude Sonnet diagnosis decoding)        │
+└──────────────────────────────────────────────────────────────────┘</div>
+
+<h3>Design Decisions</h3>
+<table>
+    <tr><th>Component</th><th>Choice</th><th>Why</th></tr>
+    <tr><td>Ingestion engine</td><td>Openflow (NiFi on SPCS)</td><td>Handles 300MB files, splits in-stream, runs inside Snowflake's network</td></tr>
+    <tr><td>Streaming sink</td><td>PutSnowpipeStreaming v1</td><td>Batches thousands of rows per API call, no warehouse needed, serverless</td></tr>
+    <tr><td>File splitting</td><td>SplitContent on <code>ST*</code></td><td>Each FlowFile = one transaction, fits VARCHAR(16MB)</td></tr>
+    <tr><td>Transformation</td><td>Dynamic Tables</td><td>Auto-refresh, declarative SQL, no scheduling</td></tr>
+    <tr><td>AI enrichment</td><td>Claude Sonnet 4-6 via AI_COMPLETE()</td><td>Best reasoning for medical code interpretation</td></tr>
+</table>
+
+<hr>
+
+<h2>Prerequisites</h2>
+
+<ul class="checklist">
+    <li>Snowflake account with ACCOUNTADMIN access</li>
+    <li>Openflow enabled (Snowpark Container Services)</li>
+    <li>S3 bucket with X12 files (or use the sample file below)</li>
+    <li>RSA key pair for Snowpipe Streaming auth (PKCS8 format, unencrypted)</li>
+    <li>Network policy allowing SPCS container IPs (use /24 CIDR block)</li>
+    <li>AI_COMPLETE function access (Cortex AI)</li>
+</ul>
+
+<hr>
+
+<h2>Step 1: Openflow Flow Configuration</h2>
+
+<p>Create an Openflow deployment and runtime, then build this 6-processor flow:</p>
+
+<h3>ListS3 → FetchS3Object → SplitContent → ExtractText → ReplaceText → PutSnowpipeStreaming</h3>
+
+<p><strong>ListS3</strong> — Bucket: your S3 bucket, Prefix: <code>x12/</code>, Listing Strategy: <code>Tracking Timestamps</code></p>
+
+<p><strong>FetchS3Object</strong> — Same bucket/credentials as ListS3</p>
+
+<p><strong>SplitContent</strong> — Byte Sequence: <code>ST*</code>, Keep Byte Sequence: <code>Leading</code>. This splits a 300MB file into individual transactions at transaction set boundaries.</p>
+
+<p><strong>ExtractText</strong> — Dynamic property: <code>x12_content</code> = <code>([\s\S]+)</code>. Captures the entire FlowFile content as an attribute.</p>
+
+<p><strong>ReplaceText</strong> — Replacement Strategy: <code>Always Replace</code>, Evaluation Mode: <code>Entire text</code></p>
+<pre><code>{"RAW_X12_DATA":"${x12_content:escapeJson()}","SOURCE_SYSTEM":"OPENFLOW_S3","MESSAGE_ID":"${UUID()}","INGESTION_TIMESTAMP":${now():toNumber()}}</code></pre>
+
+<p><strong>PutSnowpipeStreaming (v1)</strong> — Account locator, Key Pair auth, Database: <code>X12_EDI_AI</code>, Schema: <code>STAGING</code>, Table: <code>LANDING_X12_RAW</code>, Record Reader: <code>JsonTreeReader</code>, Client Lag: <code>1 sec</code></p>
+
+<div class="callout">
+    <p><strong>Why PutSnowpipeStreaming v1 over v2?</strong></p>
+    <p>v1 uses a Record Reader and targets a Table directly — perfect for structured JSON records. v2 uses NDJSON + File Fragments targeting a Pipe with Offset Tokens — designed for exactly-once file-level delivery. For streaming individual parsed records, v1 is the right choice.</p>
+</div>
+
+<hr>
+
+<h2>Step 2: Bronze Landing Table</h2>
+
+<pre><code>CREATE DATABASE IF NOT EXISTS X12_EDI_AI;
+CREATE SCHEMA IF NOT EXISTS X12_EDI_AI.STAGING;
+
+CREATE OR REPLACE TABLE X12_EDI_AI.STAGING.LANDING_X12_RAW (
+    MESSAGE_ID          VARCHAR(100),
+    TRANSACTION_TYPE    VARCHAR(10),
+    RAW_X12_DATA        VARCHAR(16777216) NOT NULL,
+    SOURCE_SYSTEM       VARCHAR(100),
+    INGESTION_TIMESTAMP VARCHAR(100)
+);</code></pre>
+
+<div class="callout warn">
+    <p><strong>Important:</strong> Snowpipe Streaming does not support columns with DEFAULT values, IDENTITY, AUTOINCREMENT, or TIMESTAMP types with format expectations. Keep all columns as plain VARCHAR — cast downstream.</p>
+</div>
+
+<hr>
+
+<h2>Step 3: Silver Layer — Parsing X12 with Dynamic Tables</h2>
+
+<p>This is where the magic happens. We turn opaque EDI strings into structured, queryable tables using pure SQL.</p>
+
+<h3>The Core Insight: SPLIT_TO_TABLE</h3>
+
+<p>X12 uses <code>~</code> as the segment terminator. One transaction with 25 segments becomes 25 rows:</p>
+
+<pre><code>CREATE OR REPLACE DYNAMIC TABLE X12_EDI_AI.SILVER.SILVER_X12_SEGMENTS
+    TARGET_LAG = '5 minutes'
+    WAREHOUSE = APP_WH
+AS
+SELECT
+    r.MESSAGE_ID,
+    r.SOURCE_SYSTEM,
+    r.INGESTION_TIMESTAMP,
+    seg.INDEX AS SEGMENT_POSITION,
+    TRIM(seg.VALUE) AS RAW_SEGMENT,
+    SPLIT_PART(TRIM(seg.VALUE), '*', 1) AS SEGMENT_ID,
+    TRIM(seg.VALUE) AS SEGMENT_DATA
+FROM X12_EDI_AI.STAGING.LANDING_X12_RAW r,
+    LATERAL SPLIT_TO_TABLE(r.RAW_X12_DATA, '~') seg
+WHERE TRIM(seg.VALUE) != '';</code></pre>
+
+<p>4.4M transactions → <strong>99M segment rows</strong>. Each row now has a <code>SEGMENT_ID</code> and positional <code>SEGMENT_DATA</code> we can parse with <code>SPLIT_PART</code>.</p>
+
+<h3>Claims Header</h3>
+<pre><code>CREATE OR REPLACE DYNAMIC TABLE X12_EDI_AI.SILVER.SILVER_CLAIMS_HEADER
+    TARGET_LAG = '5 minutes'
+    WAREHOUSE = APP_WH
+AS
+SELECT
+    MESSAGE_ID,
+    SPLIT_PART(SEGMENT_DATA, '*', 2) AS CLAIM_ID,
+    TRY_TO_DECIMAL(SPLIT_PART(SEGMENT_DATA, '*', 3), 12, 2) AS TOTAL_BILLED_AMOUNT,
+    SPLIT_PART(SEGMENT_DATA, '*', 6) AS PLACE_OF_SERVICE_CODE,
+    SOURCE_SYSTEM,
+    INGESTION_TIMESTAMP
+FROM X12_EDI_AI.SILVER.SILVER_X12_SEGMENTS
+WHERE SEGMENT_ID = 'CLM';</code></pre>
+
+<h3>Patients</h3>
+<pre><code>CREATE OR REPLACE DYNAMIC TABLE X12_EDI_AI.SILVER.SILVER_PATIENTS
+    TARGET_LAG = '5 minutes'
+    WAREHOUSE = APP_WH
+AS
+WITH patient_nm1 AS (
+    SELECT MESSAGE_ID,
+        SPLIT_PART(SEGMENT_DATA, '*', 4) AS PATIENT_LAST_NAME,
+        SPLIT_PART(SEGMENT_DATA, '*', 5) AS PATIENT_FIRST_NAME,
+        SPLIT_PART(SEGMENT_DATA, '*', 10) AS MEMBER_ID,
+        SEGMENT_POSITION
+    FROM X12_EDI_AI.SILVER.SILVER_X12_SEGMENTS
+    WHERE SEGMENT_ID = 'NM1' AND SPLIT_PART(SEGMENT_DATA, '*', 2) = 'IL'
+),
+patient_dmg AS (
+    SELECT MESSAGE_ID,
+        SPLIT_PART(SEGMENT_DATA, '*', 3) AS DATE_OF_BIRTH,
+        SPLIT_PART(SEGMENT_DATA, '*', 4) AS GENDER_CODE
+    FROM X12_EDI_AI.SILVER.SILVER_X12_SEGMENTS
+    WHERE SEGMENT_ID = 'DMG'
+)
+SELECT
+    n.MESSAGE_ID,
+    n.PATIENT_LAST_NAME,
+    n.PATIENT_FIRST_NAME,
+    n.MEMBER_ID,
+    TRY_TO_DATE(d.DATE_OF_BIRTH, 'YYYYMMDD') AS DATE_OF_BIRTH,
+    CASE d.GENDER_CODE WHEN 'M' THEN 'Male' WHEN 'F' THEN 'Female' ELSE 'Unknown' END AS GENDER
+FROM patient_nm1 n
+LEFT JOIN patient_dmg d ON n.MESSAGE_ID = d.MESSAGE_ID;</code></pre>
+
+<h3>Providers</h3>
+<pre><code>CREATE OR REPLACE DYNAMIC TABLE X12_EDI_AI.SILVER.SILVER_PROVIDERS
+    TARGET_LAG = '5 minutes'
+    WAREHOUSE = APP_WH
+AS
+SELECT
+    MESSAGE_ID,
+    CASE SPLIT_PART(SEGMENT_DATA, '*', 2)
+        WHEN '85' THEN 'Billing'
+        WHEN '82' THEN 'Rendering'
+        WHEN '41' THEN 'Submitter'
+    END AS PROVIDER_ROLE,
+    SPLIT_PART(SEGMENT_DATA, '*', 4) AS PROVIDER_NAME,
+    SPLIT_PART(SEGMENT_DATA, '*', 10) AS PROVIDER_NPI
+FROM X12_EDI_AI.SILVER.SILVER_X12_SEGMENTS
+WHERE SEGMENT_ID = 'NM1' AND SPLIT_PART(SEGMENT_DATA, '*', 2) IN ('85', '82', '41');</code></pre>
+
+<h3>Diagnoses — The Tilde Problem</h3>
+
+<p>Here's the gotcha. In X12, <code>~</code> is used as <strong>both</strong> the segment terminator AND a component separator within certain segments. The diagnosis segment <code>HI*ABK~K21.0</code> contains a <code>~</code> between the qualifier (<code>ABK</code>) and the ICD-10 code (<code>K21.0</code>). When we split the entire transaction on <code>~</code>, these get separated into adjacent rows.</p>
+
+<p>The fix: JOIN to the next <code>SEGMENT_POSITION</code>:</p>
+
+<pre><code>CREATE OR REPLACE DYNAMIC TABLE X12_EDI_AI.SILVER.SILVER_DIAGNOSES
+    TARGET_LAG = '5 minutes'
+    WAREHOUSE = APP_WH
+AS
+SELECT
+    hi.MESSAGE_ID,
+    icd.RAW_SEGMENT AS ICD10_CODE,
+    'Principal' AS DIAGNOSIS_TYPE
+FROM X12_EDI_AI.SILVER.SILVER_X12_SEGMENTS hi
+JOIN X12_EDI_AI.SILVER.SILVER_X12_SEGMENTS icd
+    ON hi.MESSAGE_ID = icd.MESSAGE_ID
+    AND icd.SEGMENT_POSITION = hi.SEGMENT_POSITION + 1
+WHERE hi.SEGMENT_ID = 'HI';</code></pre>
+
+<p>The same pattern applies to <code>SV1*HC~99213</code> — the procedure code is in the row after the SV1 segment:</p>
+
+<pre><code>CREATE OR REPLACE DYNAMIC TABLE X12_EDI_AI.SILVER.SILVER_SERVICE_LINES
+    TARGET_LAG = '5 minutes'
+    WAREHOUSE = APP_WH
+AS
+SELECT
+    sv.MESSAGE_ID,
+    sv.SEGMENT_POSITION,
+    SPLIT_PART(sld.RAW_SEGMENT, '*', 1) AS PROCEDURE_CODE,
+    TRY_TO_DECIMAL(SPLIT_PART(sld.RAW_SEGMENT, '*', 2), 12, 2) AS LINE_CHARGE_AMOUNT,
+    SPLIT_PART(sld.RAW_SEGMENT, '*', 3) AS UNIT_TYPE,
+    TRY_TO_NUMBER(SPLIT_PART(sld.RAW_SEGMENT, '*', 4)) AS UNIT_COUNT,
+    sv.SOURCE_SYSTEM,
+    sv.INGESTION_TIMESTAMP
+FROM X12_EDI_AI.SILVER.SILVER_X12_SEGMENTS sv
+JOIN X12_EDI_AI.SILVER.SILVER_X12_SEGMENTS sld
+    ON sv.MESSAGE_ID = sld.MESSAGE_ID
+    AND sld.SEGMENT_POSITION = sv.SEGMENT_POSITION + 1
+WHERE sv.SEGMENT_ID = 'SV1';</code></pre>
+
+<hr>
+
+<h2>Step 4: Gold Layer — Analytics-Ready + AI Enrichment</h2>
+
+<h3>Unified Claims Table</h3>
+
+<p>Join all Silver tables into a single analytics-ready record:</p>
+
+<pre><code>CREATE OR REPLACE DYNAMIC TABLE X12_EDI_AI.GOLD.GOLD_CLAIMS_COMPLETE
+    TARGET_LAG = '10 minutes'
+    WAREHOUSE = APP_WH
+AS
+SELECT
+    c.MESSAGE_ID, c.CLAIM_ID, c.TOTAL_BILLED_AMOUNT, c.PLACE_OF_SERVICE_CODE,
+    p.PATIENT_LAST_NAME, p.PATIENT_FIRST_NAME, p.MEMBER_ID, p.DATE_OF_BIRTH, p.GENDER,
+    bp.PROVIDER_NAME AS BILLING_PROVIDER_NAME, bp.PROVIDER_NPI AS BILLING_PROVIDER_NPI,
+    rp.PROVIDER_NAME AS RENDERING_PROVIDER_NAME,
+    d.ICD10_CODE AS PRIMARY_DIAGNOSIS_CODE,
+    COUNT(DISTINCT sl.SEGMENT_POSITION) AS SERVICE_LINE_COUNT,
+    c.SOURCE_SYSTEM, c.INGESTION_TIMESTAMP
+FROM X12_EDI_AI.SILVER.SILVER_CLAIMS_HEADER c
+LEFT JOIN X12_EDI_AI.SILVER.SILVER_PATIENTS p ON c.MESSAGE_ID = p.MESSAGE_ID
+LEFT JOIN X12_EDI_AI.SILVER.SILVER_PROVIDERS bp ON c.MESSAGE_ID = bp.MESSAGE_ID AND bp.PROVIDER_ROLE = 'Billing'
+LEFT JOIN X12_EDI_AI.SILVER.SILVER_PROVIDERS rp ON c.MESSAGE_ID = rp.MESSAGE_ID AND rp.PROVIDER_ROLE = 'Rendering'
+LEFT JOIN X12_EDI_AI.SILVER.SILVER_DIAGNOSES d ON c.MESSAGE_ID = d.MESSAGE_ID
+LEFT JOIN X12_EDI_AI.SILVER.SILVER_SERVICE_LINES sl ON c.MESSAGE_ID = sl.MESSAGE_ID
+GROUP BY ALL;</code></pre>
+
+<h3>AI Enrichment with Claude Sonnet</h3>
+
+<p>ICD-10 codes like <code>K21.0</code> or <code>J45.20</code> are meaningless to business analysts. We use Snowflake's <code>AI_COMPLETE</code> function with Claude Sonnet to decode them:</p>
+
+<pre><code>CREATE OR REPLACE DYNAMIC TABLE X12_EDI_AI.GOLD.GOLD_CLAIMS_AI_ENRICHED
+    TARGET_LAG = '30 minutes'
+    WAREHOUSE = APP_WH
+AS
+WITH enrichment AS (
+    SELECT gc.*,
+        TRY_PARSE_JSON(
+            AI_COMPLETE('claude-sonnet-4-6',
+                'You are a medical coding expert. Given this ICD-10 code, return a JSON object '
+                || 'with keys: "description", "category" (Respiratory, Cardiovascular, '
+                || 'Musculoskeletal, Endocrine, Gastrointestinal, Infectious, Neoplasm, Injury, '
+                || 'Mental Health, Other), "chronic" (true/false). Return ONLY valid JSON. '
+                || 'ICD-10 code: ' || COALESCE(gc.PRIMARY_DIAGNOSIS_CODE, 'Z00.00')
+            )
+        ) AS AI_ENRICHMENT
+    FROM X12_EDI_AI.GOLD.GOLD_CLAIMS_COMPLETE gc
+)
+SELECT *,
+    AI_ENRICHMENT:description::VARCHAR AS DIAGNOSIS_DESCRIPTION,
+    AI_ENRICHMENT:category::VARCHAR AS DIAGNOSIS_CATEGORY,
+    AI_ENRICHMENT:chronic::BOOLEAN AS IS_CHRONIC_CONDITION
+FROM enrichment;</code></pre>
+
+<div class="before-after">
+    <div>
+        <div class="label">Before</div>
+        <code style="font-size: 1.4rem;">K21.0</code>
+    </div>
+    <div>
+        <div class="label">After (AI-enriched)</div>
+        <p style="margin:0;"><strong>Gastro-esophageal reflux disease with esophagitis</strong></p>
+        <p style="margin:4px 0 0; color: var(--text-muted);">Category: Gastrointestinal · Chronic: Yes</p>
+    </div>
+</div>
+
+<p>Now any analyst can query claims by plain-English diagnosis category without a medical coding reference book.</p>
+
+<hr>
+
+<h2>Results</h2>
+
+<div class="metrics-grid">
+    <div class="metric-card">
+        <div class="value">4.4M</div>
+        <div class="label">Transactions Ingested</div>
+    </div>
+    <div class="metric-card">
+        <div class="value">99M</div>
+        <div class="label">Parsed Segments</div>
+    </div>
+    <div class="metric-card">
+        <div class="value">2.2M</div>
+        <div class="label">Enriched Claims</div>
+    </div>
+    <div class="metric-card">
+        <div class="value">~15 min</div>
+        <div class="label">End-to-End Latency</div>
+    </div>
+    <div class="metric-card">
+        <div class="value">0</div>
+        <div class="label">Warehouses for Ingestion</div>
+    </div>
+    <div class="metric-card">
+        <div class="value">0</div>
+        <div class="label">Lines of Orchestration Code</div>
+    </div>
+</div>
+
+<p>Sample query a business user runs on the Gold table:</p>
+
+<pre><code>SELECT
+    DIAGNOSIS_CATEGORY,
+    COUNT(*) AS CLAIM_COUNT,
+    ROUND(AVG(TOTAL_BILLED_AMOUNT), 2) AS AVG_BILLED,
+    SUM(CASE WHEN IS_CHRONIC_CONDITION THEN 1 ELSE 0 END) AS CHRONIC_COUNT
+FROM X12_EDI_AI.GOLD.GOLD_CLAIMS_AI_ENRICHED
+GROUP BY DIAGNOSIS_CATEGORY
+ORDER BY CLAIM_COUNT DESC;</code></pre>
+
+<hr>
+
+<h2>Troubleshooting: The 3 Errors Everyone Hits</h2>
+
+<div class="callout warn">
+    <p><strong>1. "Snowpipe Streaming does not support columns of type AUTOINCREMENT, IDENTITY, or columns with a default value"</strong></p>
+    <p>Your table has <code>DEFAULT UUID_STRING()</code> or <code>DEFAULT CURRENT_TIMESTAMP()</code>. Snowpipe Streaming requires plain columns with no defaults. Generate UUIDs and timestamps in NiFi's ReplaceText instead.</p>
+</div>
+
+<div class="callout warn">
+    <p><strong>2. "IP X.X.X.X is not allowed to access Snowflake"</strong></p>
+    <p>SPCS containers use rotating IPs. Don't add individual IPs to your network policy — add a /24 CIDR block (e.g., <code>153.45.59.0/24</code>).</p>
+</div>
+
+<div class="callout warn">
+    <p><strong>3. "Value cannot be ingested into Snowflake column of type TIMESTAMP"</strong></p>
+    <p>Snowpipe Streaming is strict about timestamp formats. Easiest fix: make the column VARCHAR and cast to TIMESTAMP in your Dynamic Tables downstream.</p>
+</div>
+
+<hr>
+
+<h2>What's Next</h2>
+
+<p>This pipeline gives you structured, AI-enriched claims data. The natural extensions:</p>
+
+<ul>
+    <li><strong>Semantic View</strong> — define metrics (avg claim cost, chronic disease rate) and dimensions (provider, diagnosis category) for text-to-SQL</li>
+    <li><strong>Cortex Agent</strong> — natural language interface ("Show me all chronic respiratory claims over $1,000 from TCH Sugar Land")</li>
+    <li><strong>Cortex Search</strong> — full-text search across raw X12 for compliance/audit</li>
+    <li><strong>834 Enrollment parsing</strong> — same pattern (SplitContent on ST*, different segment types for member/plan/coverage)</li>
+</ul>
+
+<hr>
+
+<h2>Conclusion</h2>
+
+<p>The entire pipeline — S3 to AI-enriched analytics — runs on:</p>
+
+<ul>
+    <li><strong>Serverless ingestion</strong> (Snowpipe Streaming, no warehouse)</li>
+    <li><strong>Declarative transformation</strong> (Dynamic Tables, no orchestration)</li>
+    <li><strong>AI enrichment</strong> (Claude Sonnet via AI_COMPLETE, no external APIs)</li>
+</ul>
+
+<p>No custom parsers. No Airflow DAGs. No staging databases. One SQL file, one Openflow canvas, and 300MB files become queryable claims in 15 minutes.</p>
+
+<p><strong>The X12 format hasn't changed since the 1970s. The way we process it finally has.</strong></p>
+
+<hr>
+
+<p style="color: var(--text-muted); font-size: 0.9rem; text-align: center; margin-top: 40px;">
+    <em>All code is available as a companion SQL script. Sample X12 test files and the Openflow flow JSON can be found in the linked repository.</em>
+</p>
+
+</article>
+</body>
+</html>
