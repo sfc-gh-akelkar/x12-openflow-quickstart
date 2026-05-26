@@ -12,7 +12,7 @@ except ImportError:
 class ParseX12ToJSON(FlowFileTransform):
 
     class ProcessorDetails:
-        version = "0.5.0"
+        version = "0.6.0"
         description = (
             "Parses HIPAA X12 EDI files (834, 835, 837, 270/271, 276/277) "
             "into flat JSON records. Each transaction set produces one JSON "
@@ -197,9 +197,13 @@ class ParseX12ToJSON(FlowFileTransform):
         raw = raw.lstrip()
         isa_pos = raw.find("ISA")
         if isa_pos == -1:
+            if raw.find("ST*") != -1 or raw.find("*") != -1:
+                return "*", ":", "~"
             return None
         isa_start = raw[isa_pos:]
         if len(isa_start) < 106:
+            if raw.find("*") != -1:
+                return "*", ":", "~"
             return None
         element_sep = isa_start[3]
         segment_end_char = isa_start[105]

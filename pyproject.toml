@@ -8,9 +8,7 @@ dynamic = ["version"]
 description = "NiFi Python processor for parsing HIPAA X12 EDI files into flat JSON records"
 requires-python = ">=3.11"
 license = "BSD-3-Clause"
-dependencies = [
-    "pyx12",
-]
+dependencies = []
 
 [project.optional-dependencies]
 dev = [
