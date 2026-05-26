@@ -440,7 +440,7 @@ python scripts/generate_x12_remittances.py --records 250000 --output data/volume
 ### Production Considerations
 
 - **Scaling:** SplitContent fans out large files into individual transactions; Openflow auto-scales with concurrent tasks; PutSnowpipeStreaming supports multiple channels per table
-- **Schema drift:** `ENABLE_SCHEMA_EVOLUTION` handles new fields from updated EDI implementation guides
+- **Schema changes:** If you add new fields to `field_maps.py`, you must also `ALTER TABLE ADD COLUMN` on the corresponding landing table — PutSnowpipeStreaming requires all JSON fields to have pre-existing columns
 - **Monitoring:** Openflow bulletins + Snowflake LOGIN_HISTORY for end-to-end observability
 - **Cost:** Dynamic Tables with 1-minute lag use warehouse credits only during refresh
 
