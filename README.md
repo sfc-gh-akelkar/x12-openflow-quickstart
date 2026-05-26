@@ -1,4 +1,4 @@
-# Building a Real-Time HIPAA X12 EDI Pipeline with Openflow and Cortex AI
+# Streaming X12 EDI to AI-Ready Claims Intelligence with Openflow
 
 ## Overview
 
