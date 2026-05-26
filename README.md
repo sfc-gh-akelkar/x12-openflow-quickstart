@@ -71,7 +71,7 @@ SELECT SNOWFLAKE.CORTEX.COMPLETE('claude-sonnet-4-6', 'Say hello') AS test;
 
 ### 2.1 Get the NAR File
 
-**Quick option:** Download `x12_processors-0.5.0.nar` from the repository root.
+**Quick option:** Download `x12_processors-0.6.0.nar` from the repository root.
 
 **Build from source** (for customization):
 ```bash
@@ -85,7 +85,7 @@ hatch build --target nar
 1. Navigate to your Openflow Runtime
 2. Go to **Extensions** (puzzle piece icon in the top-right)
 3. Click **Upload NAR**
-4. Select `x12_processors-0.5.0.nar`
+4. Select `x12_processors-0.6.0.nar`
 
 <!-- Screenshot: screenshots/nar_upload_success.png -->
 <!-- TODO: Add screenshot -->
@@ -110,8 +110,10 @@ You should see a green checkmark with "Installed" status.
 We'll build the pipeline left-to-right:
 
 ```
-ListS3 → FetchS3 → ParseX12ToJSON → SplitRecord → RouteOnAttribute → PutSnowpipeStreaming (×3)
+ListS3 → FetchS3 → SplitContent → ParseX12ToJSON → SplitRecord → RouteOnAttribute → PutSnowpipeStreaming (×3)
 ```
+
+> **Quick start:** Import `openflow/Openflow-X12-Flow.json` into your Openflow Runtime to get the entire canvas pre-configured. You'll only need to update the AWS credentials and Snowflake connection settings.
 
 ### 3.1 ListS3
 
@@ -137,9 +139,28 @@ Drag a **FetchS3Object** processor and connect ListS3 → FetchS3 (relationship:
 | Region | Same as ListS3 |
 | AWS Credentials Provider | Same service |
 
-### 3.3 ParseX12ToJSON
+### 3.3 SplitContent
 
-Connect FetchS3 → ParseX12ToJSON (relationship: `success`).
+Connect FetchS3 → SplitContent (relationship: `success`).
+
+This splits large EDI files at transaction set boundaries so ParseX12ToJSON processes one transaction at a time — essential for files with 100K+ records.
+
+| Property | Value |
+|----------|-------|
+| Byte Sequence Format | Text |
+| Byte Sequence | `ST*` |
+| Keep Byte Sequence | `true` |
+| Byte Sequence Location | Leading |
+
+**Relationships:**
+- `splits` → connect to ParseX12ToJSON
+- `original` → auto-terminate
+
+> **Note:** SplitContent strips the ISA/GS envelope from subsequent chunks. ParseX12ToJSON v0.6.0 handles this gracefully by falling back to standard X12 delimiters (`*`, `:`, `~`) when ISA is not present.
+
+### 3.4 ParseX12ToJSON
+
+Connect SplitContent → ParseX12ToJSON (relationship: `splits`).
 
 | Property | Value |
 |----------|-------|
@@ -153,11 +174,11 @@ Connect FetchS3 → ParseX12ToJSON (relationship: `success`).
 - `failure` → auto-terminate (catches 0-byte files gracefully)
 - `original` → auto-terminate
 
-### 3.4 SplitRecord
+### 3.5 SplitRecord
 
 Connect ParseX12ToJSON → SplitRecord (relationship: `success`).
 
-This processor splits the NDJSON output (multiple records per file) into individual FlowFiles (one record per FlowFile).
+This processor splits the NDJSON output (multiple records per transaction) into individual FlowFiles (one record per FlowFile).
 
 | Property | Value |
 |----------|-------|
@@ -173,7 +194,7 @@ This processor splits the NDJSON output (multiple records per file) into individ
 <!-- Screenshot: screenshots/splitrecord_connection.png -->
 <!-- TODO: Add screenshot -->
 
-### 3.5 RouteOnAttribute
+### 3.6 RouteOnAttribute
 
 Connect SplitRecord → RouteOnAttribute (relationship: `splits`).
 
@@ -196,7 +217,7 @@ Add three **dynamic properties** (click the `+` button):
 <!-- Screenshot: screenshots/routeonattribute_properties.png -->
 <!-- TODO: Add screenshot -->
 
-### 3.6 PutSnowpipeStreaming (×3)
+### 3.7 PutSnowpipeStreaming (×3)
 
 Create three PutSnowpipeStreaming processors, one for each transaction type.
 
@@ -256,13 +277,14 @@ Your bucket should show three files directly under the `x12/` prefix — no subf
 
 ## Step 5: Start the Pipeline
 
-1. Start all processors **except** ListS3 (start from the bottom up: PutSnowpipeStreaming → RouteOnAttribute → SplitRecord → ParseX12ToJSON → FetchS3)
+1. Start all processors **except** ListS3 (start from the bottom up: PutSnowpipeStreaming → RouteOnAttribute → SplitRecord → ParseX12ToJSON → SplitContent → FetchS3)
 2. Start ListS3 last
 
 The pipeline will:
-- List the 3 files in S3
+- List the files in S3
 - Fetch each file's content
-- Parse the X12 EDI into structured JSON (20 claims + 10 enrollments + 10 remittances = 40 records)
+- Split at transaction boundaries (ST*)
+- Parse each transaction into structured JSON
 - Split into individual records
 - Route by transaction type
 - Stream into Snowflake tables
@@ -378,12 +400,13 @@ WHERE payment_status = 'PAID' LIMIT 5;
 | Error | Cause | Fix |
 |-------|-------|-----|
 | "NAR content is missing required META-INF/MANIFEST entry" | Manual zip instead of hatch build | Use `hatch build --target nar` with `hatch-datavolo-nar` |
-| Processor shows "Invalid" with empty Properties tab | Python import path fails in NiFi flat-file loading | NAR must use try/except import pattern (already in v0.5.0) |
-| "ISA segment not found or too short" | 0-byte S3 directory marker objects | Upload .edi files flat under prefix, no subfolders |
+| Processor shows "Invalid" with empty Properties tab | Python import path fails in NiFi flat-file loading | NAR must use try/except import pattern (already in v0.6.0) |
+| "ISA segment not found or too short" | SplitContent removed ISA from chunks, or 0-byte S3 objects | Use v0.6.0 (falls back to standard delimiters); upload files flat |
 | "Authorization failed after retry" | Network policy blocking SPCS egress IPs | Check LOGIN_HISTORY, add IPs to network policy |
 | `SchemaMismatchException: [field_name]` | Table column doesn't match JSON field name | Ensure all parser output fields have matching columns |
-| `[Ljava.lang.Object;@...` in table data | JSON arrays in Record Reader | Use parser v0.5.0+ (concatenates multi-values as strings) |
-| Diagnosis codes showing "ABK" instead of ICD codes | Sub-element separator logic taking qualifier | Use parser v0.5.0+ (extracts code after composite separator) |
+| `[Ljava.lang.Object;@...` in table data | JSON arrays in Record Reader | Use parser v0.6.0 (concatenates multi-values as strings) |
+| Diagnosis codes showing "ABK" instead of ICD codes | Sub-element separator logic taking qualifier | Use parser v0.6.0 (extracts code after composite separator) |
+| `JsonEOFException` in SplitRecord | Large file output truncated | Add SplitContent before ParseX12ToJSON to split at ST* boundaries |
 
 ---
 
@@ -397,9 +420,26 @@ A complete streaming EDI pipeline:
 - **Route:** Transaction-type-based routing to typed landing tables
 - **Enrich:** Dynamic Tables + Cortex AI for analytics-ready data
 
+### Volume Test Results
+
+This pipeline was tested with 1 million records:
+
+| File | Records | Size | Result |
+|------|---------|------|--------|
+| `volume_837p_500k.edi` | 500,000 claims | 348 MB | 500,040 rows landed |
+| `volume_834_250k.edi` | 250,000 enrollments | 73 MB | 250,019 rows landed |
+| `volume_835_250k.edi` | 250,000 remittances | 97 MB | 250,020 rows landed |
+
+Generate your own volume test files:
+```bash
+python scripts/generate_x12_claims.py --claims 500000 --output data/volume_837p_500k.edi
+python scripts/generate_x12_enrollments.py --records 250000 --output data/volume_834_250k.edi
+python scripts/generate_x12_remittances.py --records 250000 --output data/volume_835_250k.edi
+```
+
 ### Production Considerations
 
-- **Scaling:** Openflow auto-scales with concurrent tasks; PutSnowpipeStreaming supports multiple channels per table
+- **Scaling:** SplitContent fans out large files into individual transactions; Openflow auto-scales with concurrent tasks; PutSnowpipeStreaming supports multiple channels per table
 - **Schema drift:** `ENABLE_SCHEMA_EVOLUTION` handles new fields from updated EDI implementation guides
 - **Monitoring:** Openflow bulletins + Snowflake LOGIN_HISTORY for end-to-end observability
 - **Cost:** Dynamic Tables with 1-minute lag use warehouse credits only during refresh
