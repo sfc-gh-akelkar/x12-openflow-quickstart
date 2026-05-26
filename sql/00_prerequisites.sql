@@ -33,4 +33,4 @@ CREATE SCHEMA IF NOT EXISTS X12_EDI_AI.GOLD;
 --    ALTER NETWORK POLICY <your_policy> SET ALLOWED_IP_LIST = (..., '153.45.59.0/24');
 
 -- 5. Verify Cortex AI access
-SELECT SNOWFLAKE.CORTEX.COMPLETE('claude-sonnet-4-6', 'Say hello') AS test;
+SELECT AI_COMPLETE('claude-sonnet-4-6', 'Say hello') AS test;

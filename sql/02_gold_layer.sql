@@ -128,10 +128,10 @@ FROM X12_EDI_AI.REMITTANCES.LANDING_835_REMITTANCES r;
 CREATE OR REPLACE VIEW X12_EDI_AI.GOLD.GOLD_CLAIMS_AI_ENRICHED AS
 SELECT
     gc.*,
-    SNOWFLAKE.CORTEX.COMPLETE('claude-sonnet-4-6',
+    AI_COMPLETE('claude-sonnet-4-6',
         'Given ICD-10 diagnosis code "' || gc.diagnosis_code_1 || '", respond with ONLY the medical specialty name (e.g., Cardiology, Orthopedics, Internal Medicine). One or two words max.'
     ) as clinical_specialty,
-    SNOWFLAKE.CORTEX.COMPLETE('claude-sonnet-4-6',
+    AI_COMPLETE('claude-sonnet-4-6',
         'Given ICD-10 code "' || gc.diagnosis_code_1 || '", provide a one-sentence plain-English description of this diagnosis.'
     ) as diagnosis_description
 FROM X12_EDI_AI.GOLD.GOLD_CLAIMS gc;

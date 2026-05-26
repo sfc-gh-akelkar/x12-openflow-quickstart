@@ -62,7 +62,7 @@ All tables have `ENABLE_SCHEMA_EVOLUTION = TRUE` as a safety net for future fiel
 ### 1.3 Verify Cortex AI Access
 
 ```sql
-SELECT SNOWFLAKE.CORTEX.COMPLETE('claude-sonnet-4-6', 'Say hello') AS test;
+SELECT AI_COMPLETE('claude-sonnet-4-6', 'Say hello') AS test;
 ```
 
 ---
@@ -366,11 +366,11 @@ Create a view that uses Cortex AI to classify each claim by clinical specialty:
 CREATE OR REPLACE VIEW X12_EDI_AI.GOLD.GOLD_CLAIMS_AI_ENRICHED AS
 SELECT
     gc.*,
-    SNOWFLAKE.CORTEX.COMPLETE('claude-sonnet-4-6',
+    AI_COMPLETE('claude-sonnet-4-6',
         'Given ICD-10 diagnosis code "' || gc.diagnosis_code_1
         || '", respond with ONLY the medical specialty name. One or two words max.'
     ) as clinical_specialty,
-    SNOWFLAKE.CORTEX.COMPLETE('claude-sonnet-4-6',
+    AI_COMPLETE('claude-sonnet-4-6',
         'Given ICD-10 code "' || gc.diagnosis_code_1
         || '", provide a one-sentence plain-English description of this diagnosis.'
     ) as diagnosis_description
